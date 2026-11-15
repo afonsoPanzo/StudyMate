@@ -22,9 +22,10 @@ export class AuthService {
 
   /**
    * Emails a single-use login link. Never reveals whether the email is registered:
-   * the caller always gets the same answer.
+   * the caller always gets the same answer. Returns the link so that local development
+   * can show it; the controller only exposes it when explicitly enabled.
    */
-  async requestLink(email: string): Promise<void> {
+  async requestLink(email: string): Promise<string | undefined> {
     const user = await this.prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
     if (!user?.email) return;
 
@@ -50,6 +51,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error(`Could not send login link: ${(error as Error).message}`);
     }
+    return link;
   }
 
   /** Exchanges a login-link token for an access token. Each link works once. */

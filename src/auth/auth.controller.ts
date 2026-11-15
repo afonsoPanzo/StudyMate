@@ -12,8 +12,11 @@ export class AuthController {
   @Post('request-link')
   @HttpCode(202)
   async requestLink(@Body() dto: RequestLinkDto) {
-    await this.auth.requestLink(dto.email);
-    return { message: 'If this email is registered, a login link has been sent.' };
+    const link = await this.auth.requestLink(dto.email);
+    const message = 'If this email is registered, a login link has been sent.';
+    // Local development without a mail server: hand the link back so it can be opened.
+    const showLink = process.env.DEV_SHOW_LOGIN_LINK === 'true' && process.env.NODE_ENV !== 'production';
+    return showLink && link ? { message, devLoginLink: link } : { message };
   }
 
   @Public()

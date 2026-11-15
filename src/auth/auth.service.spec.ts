@@ -64,7 +64,7 @@ describe('AuthService', () => {
 
     it('does not leak a mail failure to the caller', async () => {
       mail.sendLoginLink.mockRejectedValue(new Error('smtp down'));
-      await expect(service.requestLink(user.email)).resolves.toBeUndefined();
+      await expect(service.requestLink(user.email)).resolves.toEqual(expect.any(String));
     });
   });
 

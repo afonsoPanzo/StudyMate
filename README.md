@@ -40,7 +40,8 @@ Login is passwordless, by magic link:
 1. `POST /auth/request-link` with `{ "email": "..." }`. The answer is always the same,
    whether or not the email is registered.
 2. The user receives a link valid for 15 minutes that works once. Without `SMTP_URL`
-   (local development) the link is printed in the API console instead of being emailed.
+   (local development) the link is printed in the API console instead of being emailed;
+   with `DEV_SHOW_LOGIN_LINK="true"` it also comes back in the response as `devLoginLink`.
 3. Opening the link (`GET /auth/verify?token=...`, or `POST /auth/verify` with
    `{ "token": "..." }`) returns an access token valid for 7 days.
 4. Send it on every other request: `Authorization: Bearer <accessToken>`.
