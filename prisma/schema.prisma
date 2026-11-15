@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+}
+
+enum SessionStatus {
+  PROPOSED
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum ParticipantResponse {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String
+  email        String?        @unique
+  phone        String?        @unique
+  timezone     String         @default("Europe/Budapest")
+  createdAt    DateTime       @default(now())
+  availability Availability[]
+  proposed     StudySession[] @relation("SessionCreator")
+  participants SessionParticipant[]
+}
+
+model Availability {
+  id        String             @id @default(cuid())
+  userId    String
+  startAt   DateTime
+  endAt     DateTime
+  status    AvailabilityStatus @default(AVAILABLE)
+  note      String?
+  createdAt DateTime           @default(now())
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startAt, endAt])
+}
+
+model StudySession {
+  id           String                @id @default(cuid())
+  title        String
+  subject      String?
+  startAt      DateTime
+  endAt        DateTime
+  status       SessionStatus         @default(PROPOSED)
+  creatorId    String
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  creator      User                  @relation("SessionCreator", fields: [creatorId], references: [id])
+  participants SessionParticipant[]
+
+  @@index([startAt, endAt, status])
+}
+
+model SessionParticipant {
+  id         String              @id @default(cuid())
+  sessionId  String
+  userId     String
+  response   ParticipantResponse @default(PENDING)
+  respondedAt DateTime?
+  session    StudySession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([userId, response])
+}
