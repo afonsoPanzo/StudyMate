@@ -1,6 +1,7 @@
 # Architecture
 
 ## Bounded modules
+- auth: magic-link login, access tokens and the global login guard
 - users: student identity and timezone
 - availability: available/unavailable time intervals
 - sessions: proposals, participant responses and conflict checks
@@ -14,11 +15,12 @@
 - WhatsApp is an interface, not the source of truth. The API/database own scheduling state.
 - Google Calendar is a synchronized view, not the source of truth.
 - Session acceptance is unanimous among invited participants.
-- Authentication and authorization are mandatory before public deployment; the initial scaffold is local-development only.
+- Every route requires a login unless explicitly marked public. The acting user always comes from the access token, never from the request body.
+- Login is passwordless (emailed single-use link); only token hashes are stored.
 
 ## Next engineering tasks
-1. Add auth (email magic link or OAuth) and ensure userId is never trusted from arbitrary request bodies.
-2. Add DTO validation, pagination, API error format and integration tests.
+1. Restrict sign-up (invite codes or an allow-list) and rate-limit public routes by IP.
+2. Add pagination and integration tests against a real database.
 3. Add availability-aware slot suggestions (intersection of AVAILABLE windows minus UNAVAILABLE windows and confirmed sessions).
 4. Add idempotency keys for session creation and webhook processing.
 5. Add WhatsApp webhook signature validation and command parser.

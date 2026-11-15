@@ -16,8 +16,8 @@ export class CreateSessionDto {
   @IsOptional() @IsString() @MaxLength(120) subject?: string;
   @IsOffsetDateString() startAt!: string;
   @IsOffsetDateString() endAt!: string;
-  @IsString() @IsNotEmpty() creatorId!: string;
 
+  /** Everyone invited besides the logged-in user, who is the creator. */
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(50)

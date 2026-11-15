@@ -3,7 +3,8 @@ import { IsEmail, IsOptional, IsString, IsTimeZone, Matches, MaxLength, MinLengt
 export class CreateUserDto {
   @IsString() @MinLength(2) @MaxLength(100) name!: string;
 
-  @IsOptional() @IsEmail() email?: string;
+  /** Required: login links are sent to this address. */
+  @IsEmail() email!: string;
 
   /** E.164, e.g. +36201234567 — the format the WhatsApp Cloud API uses. */
   @IsOptional()

@@ -10,14 +10,18 @@ export class UsersService {
     return this.prisma.user.create({
       data: {
         name: dto.name.trim(),
-        email: dto.email?.toLowerCase(),
+        email: dto.email.toLowerCase(),
         phone: dto.phone,
         timezone: dto.timezone,
       },
     });
   }
 
+  /** Directory of students. Contact details stay private to each account. */
   findAll() {
-    return this.prisma.user.findMany({ orderBy: { createdAt: 'asc' } });
+    return this.prisma.user.findMany({
+      select: { id: true, name: true, timezone: true },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 }

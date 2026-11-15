@@ -37,14 +37,13 @@ describe('SessionsService', () => {
       title: 'Cálculo II',
       startAt: future(24),
       endAt: future(26),
-      creatorId: 'afonso',
       participantIds: ['sebastiana'],
     });
 
     beforeEach(() => prisma.user.findMany.mockResolvedValue([{ id: 'afonso' }, { id: 'sebastiana' }]));
 
     it('creates a proposal with the creator already accepted', async () => {
-      await service.create(dto());
+      await service.create('afonso', dto());
 
       const { data } = prisma.studySession.create.mock.calls[0][0];
       expect(data.participants.create).toEqual([
@@ -54,38 +53,38 @@ describe('SessionsService', () => {
     });
 
     it('locks every participant before checking conflicts', async () => {
-      await service.create(dto());
+      await service.create('afonso', dto());
       expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
     });
 
     it('rejects an interval that ends before it starts', async () => {
-      await expect(service.create({ ...dto(), endAt: future(23) })).rejects.toThrow(BadRequestException);
+      await expect(service.create('afonso', { ...dto(), endAt: future(23) })).rejects.toThrow(BadRequestException);
     });
 
     it('rejects a session in the past', async () => {
-      await expect(service.create({ ...dto(), startAt: future(-2), endAt: future(-1) })).rejects.toThrow(
+      await expect(service.create('afonso', { ...dto(), startAt: future(-2), endAt: future(-1) })).rejects.toThrow(
         'must start in the future',
       );
     });
 
     it('rejects a session with nobody but the creator', async () => {
-      await expect(service.create({ ...dto(), participantIds: ['afonso'] })).rejects.toThrow(BadRequestException);
+      await expect(service.create('afonso', { ...dto(), participantIds: ['afonso'] })).rejects.toThrow(BadRequestException);
     });
 
     it('rejects unknown users', async () => {
       prisma.user.findMany.mockResolvedValue([{ id: 'afonso' }]);
-      await expect(service.create(dto())).rejects.toThrow('do not exist');
+      await expect(service.create('afonso', dto())).rejects.toThrow('do not exist');
     });
 
     it('rejects when a participant is marked unavailable', async () => {
       prisma.availability.findFirst.mockResolvedValue({ id: 'a1' });
-      await expect(service.create(dto())).rejects.toThrow(ConflictException);
+      await expect(service.create('afonso', dto())).rejects.toThrow(ConflictException);
       expect(prisma.studySession.create).not.toHaveBeenCalled();
     });
 
     it('rejects when a participant has an overlapping confirmed session', async () => {
       prisma.studySession.findFirst.mockResolvedValue({ id: 'other' });
-      await expect(service.create(dto())).rejects.toThrow(ConflictException);
+      await expect(service.create('afonso', dto())).rejects.toThrow(ConflictException);
       expect(prisma.studySession.create).not.toHaveBeenCalled();
     });
   });

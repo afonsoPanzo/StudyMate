@@ -10,18 +10,17 @@ const errorsFor = async <T extends object>(cls: new () => T, plain: object) =>
 
 describe('DTO validation', () => {
   it('accepts timestamps with an explicit offset', async () => {
-    const base = { userId: 'u1', startAt: '2026-11-20T16:00:00+01:00', endAt: '2026-11-20T17:00:00Z' };
+    const base = { startAt: '2026-11-20T16:00:00+01:00', endAt: '2026-11-20T17:00:00Z' };
     expect(await errorsFor(CreateAvailabilityDto, base)).toEqual([]);
   });
 
   it('refuses timestamps without an offset', async () => {
-    const plain = { userId: 'u1', startAt: '2026-11-20T16:00:00', endAt: '2026-11-20' };
+    const plain = { startAt: '2026-11-20T16:00:00', endAt: '2026-11-20' };
     expect(await errorsFor(CreateAvailabilityDto, plain)).toEqual(['startAt', 'endAt']);
   });
 
   it('refuses an unknown availability status', async () => {
     const plain = {
-      userId: 'u1',
       startAt: '2026-11-20T16:00:00Z',
       endAt: '2026-11-20T17:00:00Z',
       status: 'MAYBE',
@@ -30,8 +29,8 @@ describe('DTO validation', () => {
   });
 
   it('only allows ACCEPTED or REJECTED as a response', async () => {
-    expect(await errorsFor(RespondDto, { userId: 'u1', response: 'ACCEPTED' })).toEqual([]);
-    expect(await errorsFor(RespondDto, { userId: 'u1', response: 'PENDING' })).toEqual(['response']);
+    expect(await errorsFor(RespondDto, { response: 'ACCEPTED' })).toEqual([]);
+    expect(await errorsFor(RespondDto, { response: 'PENDING' })).toEqual(['response']);
   });
 
   it('validates user email, phone and timezone', async () => {

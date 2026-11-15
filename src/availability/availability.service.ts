@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
 
@@ -6,16 +6,13 @@ import { CreateAvailabilityDto } from './dto/create-availability.dto';
 export class AvailabilityService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateAvailabilityDto) {
+  create(userId: string, dto: CreateAvailabilityDto) {
     const startAt = new Date(dto.startAt);
     const endAt = new Date(dto.endAt);
     if (endAt <= startAt) throw new BadRequestException('endAt must be after startAt');
 
-    const user = await this.prisma.user.findUnique({ where: { id: dto.userId }, select: { id: true } });
-    if (!user) throw new NotFoundException('User not found');
-
     return this.prisma.availability.create({
-      data: { userId: dto.userId, startAt, endAt, status: dto.status, note: dto.note },
+      data: { userId, startAt, endAt, status: dto.status, note: dto.note },
     });
   }
 

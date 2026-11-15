@@ -17,13 +17,13 @@ type Interval = { startAt: Date; endAt: Date };
 export class SessionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateSessionDto) {
+  async create(creatorId: string, dto: CreateSessionDto) {
     const startAt = new Date(dto.startAt);
     const endAt = new Date(dto.endAt);
     if (endAt <= startAt) throw new BadRequestException('endAt must be after startAt');
     if (startAt <= new Date()) throw new BadRequestException('A session must start in the future');
 
-    const userIds = [...new Set([dto.creatorId, ...dto.participantIds])];
+    const userIds = [...new Set([creatorId, ...dto.participantIds])];
     if (userIds.length < 2) {
       throw new BadRequestException('A session needs at least one participant besides the creator');
     }
@@ -44,10 +44,10 @@ export class SessionsService {
           subject: dto.subject?.trim(),
           startAt,
           endAt,
-          creatorId: dto.creatorId,
+          creatorId,
           participants: {
             create: userIds.map(userId => {
-              const isCreator = userId === dto.creatorId;
+              const isCreator = userId === creatorId;
               return {
                 userId,
                 response: isCreator ? ParticipantResponse.ACCEPTED : ParticipantResponse.PENDING,

@@ -17,41 +17,58 @@ after the core workflow is stable.
 - npm
 
 ## Quick start
-1. Copy `.env.example` to `.env`.
-2. Start PostgreSQL: `docker compose up -d db`
-3. Install dependencies: `npm install`
-4. Generate Prisma client: `npx prisma generate`
-5. Apply migrations: `npx prisma migrate dev`
-6. Start API: `npm run start:dev`
+1. Copy `.env.example` to `.env` and set `JWT_SECRET` (the file shows how to generate one).
+2. Install dependencies: `npm install`
+3. Generate Prisma client: `npx prisma generate`
+4. Start everything: `npm run dev`
 
-The API listens on `http://localhost:3000/api`.
+`npm run dev` starts PostgreSQL in Docker, applies pending migrations and runs the API
+in watch mode on `http://localhost:3000/api`. Docker Desktop must be running.
+After changing `prisma/schema.prisma`, create a migration with `npm run prisma:migrate`.
 
 ## Checks
-- `npm test` — unit tests (session rules and input validation)
+- `npm test` — unit tests (session rules, login links and input validation)
 - `npm run lint` — ESLint
 - `npm run typecheck` — TypeScript without emitting
 
-The starter is a foundation, not a deployed service. No Meta or Google credentials
+This is a foundation, not a deployed service. No Meta or Google credentials
 are included. Never commit `.env`.
 
-## Initial API
-All routes are under the `/api` prefix (e.g. `GET /api/health`).
+## Authentication
+Login is passwordless, by magic link:
 
-- `GET /health`
-- `POST /users` — create a student
-- `GET /users` — list students
-- `POST /availability` — add a time window
-- `GET /availability?userId=...` — list a student's windows
-- `POST /sessions` — propose a study session
-- `GET /sessions?userId=...` — list sessions involving a student
-- `POST /sessions/:id/respond` — accept or reject a proposal
+1. `POST /auth/request-link` with `{ "email": "..." }`. The answer is always the same,
+   whether or not the email is registered.
+2. The user receives a link valid for 15 minutes that works once. Without `SMTP_URL`
+   (local development) the link is printed in the API console instead of being emailed.
+3. Opening the link (`GET /auth/verify?token=...`, or `POST /auth/verify` with
+   `{ "token": "..." }`) returns an access token valid for 7 days.
+4. Send it on every other request: `Authorization: Bearer <accessToken>`.
 
-Errors: `400` invalid input, `403` user not invited, `404` not found, `409` scheduling
-conflict or duplicate email/phone. Unknown body fields are rejected.
+Only a hash of each link token is stored, and at most 3 links per user are issued
+every 15 minutes. The API never takes the acting user from the request body: it is
+always the owner of the access token.
+
+## API
+All routes are under the `/api` prefix (e.g. `GET /api/health`). Routes marked
+*public* need no login; all others need the `Authorization` header.
+
+- `GET /health` — *public*
+- `POST /users` — *public*; sign up with `name` and `email` (optional `phone`, `timezone`)
+- `POST /auth/request-link`, `POST /auth/verify`, `GET /auth/verify` — *public*
+- `GET /auth/me` — the logged-in user's own account
+- `GET /users` — directory of students (id, name and timezone only)
+- `POST /availability` — add a time window for yourself
+- `GET /availability` — your windows; `?userId=...` shows a colleague's
+- `POST /sessions` — propose a session to `participantIds`; you are the creator
+- `GET /sessions` — sessions you take part in
+- `POST /sessions/:id/respond` — accept or reject a proposal you were invited to
+
+Errors: `400` invalid input, `401` not logged in, `403` not invited, `404` not found,
+`409` scheduling conflict or duplicate email/phone. Unknown body fields are rejected.
 
 A session becomes `CONFIRMED` only after all invited participants accept.
-The initial API is intentionally simple; authentication, timezone-safe recurrence,
-Google Calendar sync and WhatsApp webhooks are later milestones.
+Timezone-safe recurrence, Google Calendar sync and WhatsApp webhooks are later milestones.
 
 ## Product rules
 1. Availability windows are stored as UTC timestamps; clients send ISO-8601 values
@@ -66,7 +83,7 @@ Google Calendar sync and WhatsApp webhooks are later milestones.
 
 ## Roadmap
 - M0: local backend + database + API smoke tests
-- M1: authentication, permissions, input validation and automated tests
+- M1: authentication, permissions, input validation and automated tests (done; sign-up is still open to anyone)
 - M2: WhatsApp Cloud API onboarding, webhook verification and command parser
 - M3: Google Calendar OAuth, secondary calendar creation and sharing
 - M4: reminders, recurring availability, course progress and deployment
